@@ -1,0 +1,649 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway-config
+data:
+  Config.yaml: |-
+    # runtime setting
+    # default run mode
+    RUN_MODE: 'dev'
+    # http server debug mode (debug、release、test)
+    HTTP_DEBUG_MODE: 'debug'
+    # HTTP Req Timeout
+    HTTP_TIME_DURATION: 10
+    # page size
+    PAGE_SIZE: 20
+    # server port
+    HTTP_SERVER_PORT: '9800'
+    # gRPC port
+    GRPC_PORT: '8800'
+
+
+    # db setting
+    # default db host
+    DB_HOST: '127.0.0.1'
+    # db driver (support mysql, postgresql, sqlite, sql server)
+    DB_DRIVER: 'mysql' 
+    # default db port
+    DB_PORT: '3306'
+    # default db name
+    DB_NAME: 'zhuiyi'
+    # db user
+    DB_USER: 'root'
+    # db password
+    DB_PASSWD: '***'
+    # db max idle conns
+    DB_MAX_IDLE_CONNS: 10
+    # db max open conns
+    DB_MAX_OPEN_CONNS: 100
+    # db conn max life time (minutes)
+    DB_CONN_MAX_LIFETIME: 60
+    # slow sql
+    DB_SLOWTHRESHOLD: 5
+    # db log (silent, error, warn, info)
+    DB_LOGMODE: 'info'
+
+
+    # cache setting
+    # cache enable
+    CACHE_ENABLED: false
+    # cache connect mode (cluster, single)
+    CACHE_CONNECT_MODE: 'single'
+    # cache address
+    CACHE_ADDRESS: '127.0.0.1:30379'
+    # cache passwd
+    CACHE_PASSWD: 'zhuiyi123'
+    # cache pool size
+    CACHE_POOL_SIZE: 15
+    # cache minidle conns
+    CACHE_MINIDLE_CONNS: 10
+    # cache db
+    CACHE_DB: 0
+
+
+    # log setting
+    # log Level （info、debug、error）
+    LOG_LEVEL: 'info'
+    # log max age (minutes, default 30 days)
+    LOG_MAX_AGE: 43200
+    # log rotation time (minutes, default 1 days)
+    LOG_ROTATION_TIME: 1140
+  
+  PoolConfig.yaml: |-
+    pool:
+      setting:
+        # gRPC pool Setting
+        ENABLED: true
+        CLUSTER_ENABLED: false  # 是否支持集群部署
+        CLUSTER_NODE_NUM: 2     # 集群节点数量
+        DIAL_TIMEOUT: 5          # second
+        BACKOFF_MAX_DELAY: 3     # second
+        KEEPALIVE_TIME: 5        # second
+        KEEPALIVE_TIMEOUT: 3      # second
+        OMP_ENABLED: true   # 是否支持 OMP 平台
+        TENANT_ENABLED: false
+        NETWORK_MODE: 2  # 1.严格匹配ip+port(内网环境), 2.仅匹配端口(支持内网和公网环境)
+        GATEWAY_PROXY_ADDR: '0.0.0.0'
+        ENGINE_SERVICE_SELECTOR_KEY: 'engine'
+        ASR_ENGINE_SERVICE_SELECTOR_VALUE: 'zhuiyi.ai.asr'
+        TTS_ENGINE_SERVICE_SELECTOR_VALUE: 'zhuiyi.ai.tts'
+      engine: 
+        # asr pool setting
+        - ENGINE_NAME: ASR
+          POOL_ENABLED: true
+          GATEWAY_PROXY_PORT: '8800'
+          POOL_MODEL: 0      # default 0 : STRICT_MODE, 1: LOOSE_MODE
+          GRPC_REQUEST_REUSABLE: true
+          REQUEST_IDLE_TIME: 10 # second
+          REQUEST_MAX_LIFE: 60  # second
+          REQUEST_TIMEOUT: 10  # second
+          ENGINE_POOL_INIT_INTERVAL_TIME: 10  # second
+          ENGINE_SERVER_PORT: '31502'
+          ENGINE_LIST:
+          - SERVER_HOST: 'asr-server'
+            ENGINE_GRPC_POOL_SIZE: 32
+
+        # tts pool setting
+        - ENGINE_NAME: TTS
+          POOL_ENABLED: true
+          GATEWAY_PROXY_PORT: '8801'
+          POOL_MODEL: 0       # default 0 : STRICT_MODE, 1: LOOSE_MODE
+          GRPC_REQUEST_REUSABLE: true
+          REQUEST_IDLE_TIME: 10 # second
+          REQUEST_MAX_LIFE: 60  # second
+          REQUEST_TIMEOUT: 10  # second
+          ENGINE_POOL_INIT_INTERVAL_TIME: 10  # second
+          ENGINE_SERVER_PORT: '20800'
+          ENGINE_LIST:
+          - SERVER_HOST: 'tts-server'
+            ENGINE_GRPC_POOL_SIZE: 32
+  
+  RouteConfig.yaml: |-
+    route:
+    - path: ""
+      method: ""
+      to: ""
+  
+  TenantConfig.yaml: |-
+    tenants:
+      - TENANT_ID: 8tv22s
+        TENANT_NAME: zhuiyi(追一)
+        ENGINE_NAME: ASR
+        ENGINE_POOL_SIZE: 1
+        SCENE_CODE: 8tv22s8i0
+        TOKEN: OHR2MjJzLTh0djIyczhpMC0xMjM0   # userid + scene_code + rand
+      
+      - TENANT_ID: 22s8i1
+        TENANT_NAME: 科大讯飞
+        ENGINE_NAME: ASR
+        ENGINE_POOL_SIZE: 10
+        SCENE_CODE: 8tv22s8i1
+        TOKEN: MjJzOGkxLTh0djIyczhpMS01NDMy
+
+      # - TENANT_ID: 3
+      #   TENANT_NAME: tencent(腾讯)
+      #   ENGINE_NAME: TTS
+      #   ENGINE_POOL_SIZE: 5
+      #   SCENE_CODE: 8ofond44g
+      #   TOKEN: c66do15likr8ofond44g
+
+      # - TENANT_ID: 4
+      #   TENANT_NAME: aliyun(阿里云)
+      #   ENGINE_NAME: TTS
+      #   ENGINE_POOL_SIZE: 5
+      #   SCENE_CODE: 8ofond44a
+      #   TOKEN: c66do15likr8ofond44a
+  
+  VSConfig.yaml: |-
+    vs:
+      # k8s vs setting
+      kvs:
+        ENABLED: true
+        # default namesapce
+        NAMESPACE: 'zhuiyi'
+        DEPLOY_FILE_PATH: 'config/k8s/manifest/'
+        MIN_CPU: '1'  # 最小 1c
+        MIN_MEMORY: '8000Mi' # 最小 7g
+
+      # docker vs setting
+      dvs:
+        ENABLED: false
+        HOST: 127.0.0.1
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: engine-asr-mainifest
+data:
+  deployment.yaml: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      annotations:
+        dependOn: asr-server
+      name: asr-server
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          # app: asr-server
+      template:
+        metadata:
+          labels:
+            # app: asr-server
+        spec:
+          # hostNetwork: true
+          nodeSelector:
+            zhuiyi.ai/asr: granted
+          containers:
+          # - name: asr-library
+          #   image: registry01.wezhuiyi.com/ivc/asr-library:v2.7.0
+          #   env: 
+          #   - name: USER_ID
+          #     value: "1010"
+          #   - name: GROUP_ID
+          #     value: "1010"
+          #   resources:
+          #   volumeMounts:
+          #   - mountPath: /opt/app/algorithm
+          #     name: library-data
+          # asr model
+          - name: asr-model
+            image: registry01.wezhuiyi.com/ivc/asr-model:v3.7.0
+            command: ["/bin/sh", "-c", "chmod -R 755 /data/ivc && cd /data/ivc/sgr-model && rm -rf sgr_model.tar.gz && wget --header='Authorization: Basic c3BlZWNoOlY2eUxUVXFjQ01HNA==' http://172.16.30.15/repository/speech/yispeech/model/sgr_model/sgr_v1.0.0/sgr_model.tar.gz && tar -zxvf sgr_model.tar.gz && /entrypoint.sh start"]
+            env:
+            - name: USER_ID
+              value: "1010"
+            - name: GROUP_ID
+              value: "1010"
+            resources:
+            volumeMounts:
+            - mountPath: /data/ivc/asr-model
+              name: model-data
+            - mountPath: /data/ivc/sgr-model
+              name: sgr-data
+          # asr server
+          - name: engine-server
+            env:
+            - name: USER_ID
+              value: "1000"
+            - name: GROUP_ID
+              value: "1000"
+            - name: GRPC_LISTEN_IP
+              value: "0.0.0.0"
+            - name: GRPC_LISTEN_PORT
+              value: "31502"
+            - name: SCHEDULE_HOST_LIST
+              value: ""
+            - name: SCHEDULE_PORT
+              value: ""
+            - name: ENABLE_VAD
+              value: "true"
+            - name: VALUE
+              value: "default"
+            # 插件配置
+            - name: USE_PLUGIN
+              value: "zhuiyi"
+            - name: USE_PLUGIN_ALIAS
+              value: "zhuiyi"
+            - name: ASR_PLUGIN_ZHUIYI_ASR_MODEL_ID
+              value: ""
+            - name: ASR_PLUGIN_ZHUIYI_ASR_SGR_ID
+              value: "sgr_v1.0.0"
+            image: asr-server:k8s_v1 #registry01.wezhuiyi.com/ivc/asr-server:v2.8.1
+            imagePullPolicy: IfNotPresent
+            ports:
+            - containerPort: 31502
+            command: ["/bin/sh", "-c", "cp -rf /opt/vad/vad.yaml /data/ivc/asr-server/plugin/zhuiyi/etc/ && cp -rf /opt/hotwords/hotwords.dict /data/ivc/asr-server/plugin/zhuiyi/etc/ && /data/ivc/asr-server/bin/entrypoint.sh start -c "]
+            livenessProbe:
+              initialDelaySeconds: 300
+              periodSeconds: 10
+              tcpSocket:
+                port: 31502
+              timeoutSeconds: 3
+              failureThreshold: 300
+            readinessProbe:
+              initialDelaySeconds: 300
+              periodSeconds: 10
+              tcpSocket:
+                port: 31502
+              timeoutSeconds: 3
+              failureThreshold: 300
+            resources:
+              limits:
+                cpu: 5
+                memory: 10Gi
+                # ephemeral-storage: "10Gi"
+              requests:
+                cpu: 5
+                memory: 10Gi
+                # ephemeral-storage: "10Gi"
+            volumeMounts:
+            - name: model-data
+              mountPath: /data/ivc/asr-server/model/asr_model/
+            # - mountPath: /data/ivc/asr-server/lib/algorithm/
+            #   name: library-data
+            - name: sgr-data
+              mountPath: /data/ivc/asr-server/model/sgr_model/
+            - name: vad-data
+              mountPath: /opt/vad/vad.yaml
+              subPath: vad.yaml
+            - name: hotwords-data
+              mountPath: /opt/hotwords/hotwords.dict
+              subPath: hotwords.dict
+
+          enableServiceLinks: false
+          volumes:
+          - name: model-data
+            emptyDir: {}
+            # hostPath:
+            #   path: /data/ivc/k8s/model
+            #   type: Directory
+          - name: sgr-data
+            emptyDir: {}
+            # hostPath:
+            #   path: /data/ivc/k8s/sgr
+            #   type: Directory
+          # - name: library-data
+          #   emptyDir: {}
+            # hostPath:
+            #   path: /data/ivc/k8s/library
+            #   type: Directory
+
+  service.yaml: |-
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: asr-server
+      labels:
+        engine: zhuiyi.ai.asr
+    spec:
+      ports:
+      - name: "grpc-31502"
+        port: 31502
+        targetPort: 31502
+      # selector:
+        # app: asr-server
+      type: ClusterIP
+
+  vad-configmap.yaml: |-
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: asr-vad-cm
+    data:
+      vad.yaml: |-
+        model_dir: model/vad_model/vad_model_v4/wavenet
+        sil_time_thre: 0.55
+        speech_weight: 0.65
+        sil_weight: 0.55
+        speech_win_len: 0.20
+        sil_win_len: 0.20
+  
+  hotwords-configmap.yaml: |-
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: hotwords-cm
+    data:
+      hotwords.dict: |-
+        电费价格 dian4 fei4 jia4 ge2
+        报事报修 bao4 shi4 bao4 xiu1
+        报修 bao4 xiu1
+        门岗放行 men2 gang3 fang4 xing2
+        放行 fang4 xing2
+        出入证 chu1 ru4 zheng4
+        车位管理 che1 wei4 guan3 li3
+        开电表 kai1 dian4 biao3
+        办理门禁卡 ban4 li3 men2 jin4 ka3
+        业主咨询 ye4 zhu3 zi1 xun2
+        查询电费 cha2 xun2 dian4 fei4
+        宽带报修 kuan1 dai4 bao4 xiu1
+        投诉 tou2 su4
+        漏水 lou4 shui3
+        语音服务 yu3 yin1 fu2 wu4
+        业务咨询 ye4 wu4 zi1 xun2
+        装修许可证收费 zhuang1 xiu1 xu3 ke3 zheng4 shou1 fei4
+        工程验收 gong1 cheng2 yan4 shou1
+        
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: engine-tts-mainifest
+data:
+  deployment.yaml: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      annotations:
+        dependOn: tts-server
+      name: tts-server
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: tts-server
+      template:
+        metadata:
+          labels:
+            app: tts-server
+        spec:
+          # hostNetwork: true
+          containers:
+          # - name: tts-library
+          #   image: registry01.wezhuiyi.com/ivc/tts-library:v1.7.0
+          #   env: 
+          #   - name: USER_ID
+          #     value: "1010"
+          #   - name: GROUP_ID
+          #     value: "1010"
+          #   resources:
+          #   volumeMounts:
+          #   - mountPath: /data/ivc/tts-library
+          #     name: library-data
+          # # tts model
+          # - name: tts-model
+          #   image: registry01.wezhuiyi.com/ivc/tts-model:v2.6.0
+          #   # command: ["/bin/sh", "-c", "chmod -R 755 /data/ivc && cd /data/ivc/sgr-model && rm -rf sgr_model.tar.gz && wget --header='Authorization: Basic c3BlZWNoOlY2eUxUVXFjQ01HNA==' http://172.16.30.15/repository/speech/yispeech/model/sgr_model/sgr_v1.0.0/sgr_model.tar.gz && tar -zxvf sgr_model.tar.gz && /entrypoint.sh start"]
+          #   env:
+          #   - name: USER_ID
+          #     value: "1010"
+          #   - name: GROUP_ID
+          #     value: "1010"
+          #   resources:
+          #   volumeMounts:
+          #   - mountPath: /data/ivc/tts-model
+          #     name: model-data
+          # tts server
+          - name: engine-server
+            env:
+            - name: USER_ID
+              value: "1010"
+            - name: GROUP_ID
+              value: "1010"
+            - name: GRPC_LISTEN_IP
+              value: "0.0.0.0"
+            - name: GRPC_LISTEN_PORT
+              value: "20800"
+            - name: SCHEDULE_HOST_LIST
+              value: ""
+            - name: SCHEDULE_PORT
+              value: ""
+            - name: VALUE
+              value: "default"
+            # 插件配置
+            - name: USE_PLUGIN
+              value: "zhuiyi"
+            - name: USE_PLUGIN_ALIAS
+              value: "zhuiyi"
+            - name: TTS_PLUGIN_ZHUIYI_VOICE_ID
+              value: "xiaona_16k,xiaona"
+            image: tts-server:k8s_v1 #registry01.wezhuiyi.com/ivc/tts-server:v2.9.8
+            imagePullPolicy: IfNotPresent
+            ports:
+            - containerPort: 20800
+            command: ["/bin/sh", "-c", "mkdir -p /data/ivc/tts-model/yitts_frontend_model/asset/zh/ && cp -rf /opt/wordpinyin/cn_word2pinyin.dict /data/ivc/tts-server/etc/ && cp -rf /opt/familyname/familyname.txt /data/ivc/tts-model/yitts_frontend_model/asset/zh/ && /data/ivc/tts-server/bin/entrypoint.sh start -c"]
+            # command: ["/bin/sh", "-c", "tail -f /dev/null"]
+            livenessProbe:
+              initialDelaySeconds: 300
+              periodSeconds: 10
+              tcpSocket:
+                port: 20800
+              timeoutSeconds: 3
+              failureThreshold: 300
+            readinessProbe:
+              initialDelaySeconds: 300
+              periodSeconds: 10
+              tcpSocket:
+                port: 20800
+              timeoutSeconds: 3
+              failureThreshold: 300
+            resources:
+              limits:
+                cpu: "8"
+                memory: 15Gi
+                # ephemeral-storage: "10Gi"
+              requests:
+                cpu: "8"
+                memory: 15Gi
+                # ephemeral-storage: "10Gi"
+            volumeMounts:
+            - name: wordpinyin-data
+              mountPath: /opt/wordpinyin/cn_word2pinyin.dict
+              subPath: cn_word2pinyin.dict
+            - name: familyname-data
+              mountPath: /opt/familyname/familyname.txt
+              subPath: familyname.txt
+          enableServiceLinks: false
+          volumes:
+          - name: model-data
+            emptyDir: {}
+            # hostPath:
+            #   path: /data/ivc/k8s/model
+            #   type: Directory
+          - name: library-data
+            emptyDir: {}
+            # hostPath:
+            #   path: /data/ivc/k8s/library
+            #   type: Directory
+            
+  service.yaml: |-
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: tts-server
+      labels:
+        engine: zhuiyi.ai.tts
+    spec:
+      ports:
+      - name: "grpc-20800"
+        port: 20800
+        targetPort: 20800
+      # selector:
+        # app: asr-server
+      type: ClusterIP
+
+  familyname-configmap.yaml: |-
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: familyname-cm
+    data:
+      familyname.txt: |-
+  
+  wordpinyin-configmap.yaml: |-
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: wordpinyin-cm
+    data:
+      cn_word2pinyin.dict: |-
+        # 自行整理部分, 里头 注释掉的 "少见"，现代人多念其高频发音，而不念其低频发音
+        薄 bo2
+        #逢 pang2 # 少见，删除
+        兴 xing1
+        翟 zhai2
+        阮 ruan3
+        蒙 meng2
+        曾 zeng1
+        占 zhan1
+        宁 ning4
+        佴 nai4
+        卜 bu3
+        撒 sa3
+        祭 zhai4
+        纪 ji3
+        洗 xian3
+        褚 chu3
+        当 dang4
+        肖 xiao1
+        燕 yan1
+        长 chang2
+        少 shao4
+        应 ying1
+        仉 zhang3
+        # 不 fou1 # 过于少见， 删除
+        恽 yun4
+        殷 yin1
+        庾 yu3
+        朝 chao2
+        贾 jia3
+        # 厘 xi1 # 少见
+        盛 sheng4
+        # 适 kuo4 # 少见 gua2?
+        弗 fei4 # 少见
+        胥 xu1
+        干 gan1
+        繆 miao4
+        重 chong2
+        舍 she4
+        藉 ji2
+        秘 bi4
+        阙 que4 # 罕见姓氏
+        # 藏 zang4 # 似乎没有这个姓氏
+        强 qiang2 # 普遍念强 qiang3 jiang4 jiang1
+        参 shen1 # 罕见姓氏
+        么 yao1 # 在全国500个大姓排第420位
+        车 che1 # ju1
+        化 hua4
+        斗 dou4 #少见姓氏
+        贲 ben1
+        柏 bai3
+        牟 mu4 # 大部分念4声，少部分读 mou2
+
+        # 那 na1 # 例如 歌手 那英，大家不念 1声了
+        # 房 pang2 # 现在基本已经念 fang2 不念 pang2
+        # 黑  #he4 比较少见，所以改为he1 # 姓氏读音： hēi（汉族姓氏及黑肱氏后裔姓氏）、hè（回姓汉化后姓氏及回姓“朱”姓的改姓）、mèi（突厥族黑氏分支，默氏后裔的姓氏）、mò（墨肱氏后裔姓氏）（黑肱氏、墨肱氏同来自“姬”姓，简改为“黑”） 另外，在《说文解字》写到，当作姓氏时，读hè
+        # 以下内容来源: http://m.xinhuanet.com/ah/2518-54/19/c_1122759544.htm
+        仇 qiu2 # 读【qiú】，不读chóu。如明代著名画家仇英。
+        朴 piao2 # 读【piáo】，不读pǔ。此姓朝鲜族多见，如韩国前总统朴槿惠。
+        单 shan4 # 读【shàn】，不读dān。如《说唐》中的单雄信。
+        解 xie4 # 读【xiè】，不读jiě。如明代才子解缙。
+        区 ou1 # 读【ōu】，不读qū。如柳宗元《童区寄传》中的区寄。
+        查 zha1 # 读【zhā】，不读chá。如作家金庸原名查良镛。
+        繁 po2 # 读【pó】，不读fán。如写《定情诗》的汉末诗人繁钦。
+        瞿 qu2 # 读【qú】，不读jù。如革命家瞿秋白。
+        员 yun4 # 读【yùn】，不读yuán。如唐代诗人员半千。
+        能 nai4 # 读【nài】，不读néng。如宋代名医能自宣。
+        阚 kan4 # 读【kàn】，不读hǎn。如三国时吴国学者阚泽。
+        都 du1 # 读【dū】，不读dōu。如明代进士都穆。
+        乜 nie4 # 读【niè】，不读miē。如民国时国军少将乜子彬。
+        缪 miao4 # 读【miào】，不读móu。
+        句 gou1 # 读【gōu】，不读jù。如宋代进士句克俭。复姓句龙，也读gōu。
+        # 阿 e1 # 读【ē】，不读ā。 # 现在少念 e1
+        # 多音字：声调不同 还有一些多音字 # 声调不同，用于姓氏时也容易读错。
+        任 ren2 # 读【rén】，不读rèn。如《笑傲江湖》女主角任盈盈。
+        要 yao1 # 读【yāo】，不读yào。如春秋时著名刺客要离。
+        华 hua4 # 读【huà】，不读huá。如数学家华罗庚。
+        过 guo1 # 读【guō】，不读guò。
+        曲 qu1 # 读【qū】，不读qǔ。如唐代司空曲环。
+        訾 zi1 # 读【zī】，不读zǐ。如元代有名孝子訾汝道。
+        哈 ha3 # 读【hǎ】，不读hā。如央视春晚总导演哈文。
+        钻 zuan1 # 读【zuān】，不读zuàn。
+        谌 chen2 # 读【chén】，不读shèn。如羽毛球运动员谌龙。
+
+        # 一字多音 # 姓氏读多音 同样，一字多音，姓也不同。
+        # 2521-1-5: 这里取较为频繁的读音
+        乐 le4 # 比如“乐”姓。乐有两种读音【Yuè】和【Lè】。乐（Yuè）姓的名人有古代的军事家乐毅，而乐（Lè）姓，代表名人有大家的熟知的这一位：乐嘉。你读对了么？
+        折 zhe2 # 一读【shé】，一读【zhé】。
+        盖 gai4 # 一读【gě】，一读【gài】。一般念【gě】，如现代京剧表演艺术家盖叫天。
+        隗 kui2 # 一读【kuí】，一读【wěi】。（PS还有一种读法，为 yǔ
+        种 zhong3 # 一读【chóng】，一读【zhǒng】。一般念【chóng】，如北宋末年名将种师道。
+        覃 qin2 # 一读【tán】，一读【qín】；一般读【qín】。
+        召 zhao4 # 一读【shào】，得姓始祖为周武王之弟召公姬奭（shì）。一读【zhào】，为傣族姓。
+        相 xiang4 # 一读【xiāng】，一读【xiàng】。
+        # 容易错认的姓 还有这些容易认错的字你都读对了吗？
+        逄 pang2 # 读【páng】。
+        桓 huan2 # 读【huán】。如东晋大将桓温。
+        蒯 kuai3 # 读【kuǎi】。如汉初谋士蒯通。
+        殳 shu1 # 读【shū】。
+        厍 she4 # 读【shè】。如北周大臣厍狄峙。
+        靳 jin4 # 读【jìn】。如演员“老干部”靳东。
+        郄 qie4 # 读【qiè】。
+        昝 zan3 # 读【zǎn】。如清代书画家昝茹颖。
+        逯 lu4 # 读【lù】。如汉代大臣逯普。
+        郦 li4 # 读【lì】。如汉初名臣郦食其（lì yì jī）。
+        麹 qu1 # 读【qū】。如隋代高昌国国王麴伯稚。
+        璩 qu2 # 读【qú】。
+        郗 xi1 # 读【xī】。但古籍中也有读chī的。
+        妫 gui1 # 读【guī】，不读wěi。
+        郏 jia2 # 读【jiá】。如清代著名画家郏伦逵。
+        郜 gao4 # 读【gào】。如国足运动员郜林。
+
+        ######### 复姓 ##########
+        # 易读错的复姓 还有 # 日常生活中的复姓也很容易读错哦。
+        令狐 ling2 hu2 # 读【líng hú】，不读lìng hú。如令狐冲。
+        尉迟 yu4 chi2 # 读【yù chí】，不读wèi chí。如唐初大将尉迟恭；尉单独作姓时读wèi，如战国时著名军事理论家尉缭。
+        澹台 tan2 tai2 # 读【tán tái】，不读dàn tái。如孔子弟子澹台灭明。
+        皇甫 huang2 fu3 # 读【huáng fǔ】，不读huáng pǔ。如晚唐诗人皇甫松。
+        长孙 zhang3 sun1 # 读【zhǎng sūn】，不读cháng sūn。如唐初名臣长孙无忌。
+        宰父 zai3 fu3 # 读【zǎi fǔ】，不读zǎi fù。如孔子弟子宰父黑。
+        亓官 qi2 guan1 # 读【qí guān】。如孔子的妻子亓官氏。
+        毌丘 guan4 qiu1 # 读【guàn qiū】，不要读作 wú qiū 或 mǔqiū，也不要写作“毋丘”或“母丘”。
+        鲜于 xian1 yu2
+
+
+...
+

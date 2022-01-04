@@ -1,0 +1,58 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-data-job
+  labels:
+    job-name: init-data-job
+spec:
+  backoffLimit: 10
+  activeDeadlineSeconds: 10000
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+    spec:
+      priorityClassName: zhuiyi-container-critical
+      initContainers:
+      - name: wait-for-onezone
+        image: codingcorp-docker.pkg.coding.net/nocalhost/public/nocalhost-wait:latest
+        imagePullPolicy: IfNotPresent
+        args:
+          - "pod"
+          - "-lapp=mariadb"
+      containers:
+      - name: init-data-job
+        image: ethansmart-docker.pkg.coding.net/istioalltime/roandocker/data-migration:v1.0.0
+        command: ["/bin/bash", "/app/initdata.sh"]
+        args: ["/app", "zhuiyi_ivc"]
+        # command: ["/bin/sh","-c", "tail -f /dev/null"]
+        env:
+        - name: SQL_FILE
+          value: "/app"
+        - name: GIT_BRANCH
+          value: ""
+        - name: GITURL
+          value: ""
+        - name: GITUSER
+          value: ""
+        - name: GITPASSWD
+          value: ""
+        - name: MIGRATION
+          value: "MYSQL_SERVICE_HOST"
+        - name: DBUSER
+          value: "root"
+        - name: DBPASSWD
+          value: "zhuiyi123"
+        - name: INTERVAL_TIME
+          value: "5"
+        resources:
+          limits:
+            cpu: 300m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        imagePullPolicy: Always
+      restartPolicy: OnFailure
+      # imagePullSecrets:
+      # - name: zhuiyi-registry-cred

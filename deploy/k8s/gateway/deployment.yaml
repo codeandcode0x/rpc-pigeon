@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    dependOn: ivc-gateway
+  name: ivc-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ivc-gateway
+  template:
+    metadata:
+      labels:
+        app: ivc-gateway
+    spec:
+      nodeName: worker-94.localdomain
+      containers:
+      # asr gateway
+      - name: ivc-gateway
+        image: ethansmart-docker.pkg.coding.net/istioalltime/roandocker/ivc-gateway:v1.0.0
+        # command: ["/bin/sh", "-c", "tail -f /dev/null && /opt/app/ivc-gateway/gateway"]
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8800
+        - containerPort: 8801
+        - containerPort: 9800
+        volumeMounts:
+        - mountPath: /opt/app/config
+          name: ivc-gateway-config
+        - mountPath: /opt/app/config/k8s/manifest/asr
+          name: ivc-engine-asr-mainifest
+        - mountPath: /opt/app/config/k8s/manifest/tts
+          name: ivc-engine-tts-mainifest
+        # - mountPath: /opt/app/run
+        #   name: data
+        livenessProbe:
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          tcpSocket:
+            port: 9800
+          timeoutSeconds: 3
+          failureThreshold: 30
+        readinessProbe:
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          tcpSocket:
+            port: 9800
+          timeoutSeconds: 3
+          failureThreshold: 30
+        resources:
+          limits:
+            cpu: "2"
+            memory: 4Gi
+            # ephemeral-storage: "10Gi"
+          requests:
+            cpu: "2"
+            memory: 4Gi
+      enableServiceLinks: false
+      priorityClassName: zhuiyi-container-critical
+      volumes:
+      - configMap:
+          name: gateway-config
+        name: ivc-gateway-config
+      - configMap:
+          name: engine-asr-mainifest
+        name: ivc-engine-asr-mainifest
+      - configMap:
+          name: engine-tts-mainifest
+        name: ivc-engine-tts-mainifest
+      # - name: data
+      #   hostPath:
+      #     path: /data/k8s
+      #     type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ivc-gateway
+  labels:
+    app: ivc-gateway
+spec:
+  ports:
+  - name: "grpc-8800"
+    port: 8800
+    targetPort: 8800
+    nodePort: 30880
+  - name: "grpc-8801"
+    port: 8801
+    targetPort: 8801
+    nodePort: 30881
+  - name: "http-9800"
+    port: 9800
+    targetPort: 9800
+    nodePort: 30800
+  selector:
+    app: ivc-gateway
+  type: NodePort
+status:
+  loadBalancer: {}

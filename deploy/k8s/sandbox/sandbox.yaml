@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    dependOn: ivc-sandbox
+  name: ivc-sandbox
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ivc-sandbox
+  template:
+    metadata:
+      labels:
+        app: ivc-sandbox
+    spec:
+      containers:
+      # asr gateway
+      - name: ivc-sandbox
+        image: ethansmart-docker.pkg.coding.net/istioalltime/roandocker/ivc-sandbox:v1.0.0
+        command: ["/bin/sh", "-c", "tail -f /dev/null"]
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8800
+        - containerPort: 8801
+        - containerPort: 9800
+        volumeMounts:
+        - mountPath: /opt/app/
+          name: data
+        resources:
+          limits:
+            cpu: "2"
+            memory: 3Gi
+          requests:
+            cpu: "2"
+            memory: 3Gi
+      enableServiceLinks: false
+      volumes:
+      - name: data
+        hostPath:
+          path: /data/k8s/code
+          type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ivc-sandbox
+spec:
+  ports:
+  - name: "grpc-8800"
+    port: 8800
+    targetPort: 8800
+    nodePort: 30180
+  - name: "grpc-8801"
+    port: 8801
+    targetPort: 8801
+    nodePort: 30181
+  - name: "http-9800"
+    port: 9800
+    targetPort: 9800
+    nodePort: 30100
+  selector:
+    app: ivc-sandbox
+  type: NodePort
+status:
+  loadBalancer: {}

@@ -1,0 +1,15 @@
+vs:
+  # k8s vs setting
+  kvs:
+    ENABLED: true
+    # default namesapce
+    NAMESPACE: 'zhuiyi'
+    DEPLOY_FILE_PATH: 'config/k8s/manifest/'
+    MIN_CPU: '1'  # 最小 1c
+    MIN_MEMORY: '8000Mi' # 最小 8g
+
+  # docker vs setting
+  dvs:
+    ENABLED: false
+    HOST: 127.0.0.1
+
