@@ -304,10 +304,9 @@ docker-compose -f  docker/rpc-pigeon.yaml up
 ## k8s
 ### 设置环境码
 ### 设置 k8s 调度策略
-设置 asr 和 tts 的调度策略
+设置 grpc
 ```sh
-kubectl label nodes nodeName zhuiyi.ai/asr=granted
-kubectl label nodes nodeName zhuiyi.ai/tts=granted
+kubectl label nodes nodeName service.rpc/grpc=granted
 ```
 查看调度策略 labels
 ```sh
@@ -315,7 +314,7 @@ kubectl get nodes nodeName --show-labels
 ```
 删除调度策略 label
 ```sh
-kubectl label nodes nodeName zhuiyi.ai/asr-
+kubectl label nodes nodeName service.rpc/grpc-
 ```
 
 ### 部署 gateway
@@ -324,4 +323,4 @@ kubectl apply -f  k8s/rpc-pigeon.yaml
 ```
 
 ## Cluster （集群）
-分布式部署，rpc-pigeon 和 ASR/TTS 是多对多部署即可
+分布式部署，rpc-pigeon 和 grpc 服务 是多对多部署即可
